@@ -1,5 +1,6 @@
 #include "darray.h"
 #include "handle.h"
+#include "http.h"
 #include "tcp.h"
 #include "tokenizer.h"
 #include <errno.h>
@@ -7,20 +8,11 @@
 #include <linux/openat2.h>
 #include <poll.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <unistd.h>
-
-static char header200[] = "HTTP/1.1 200 OK\r\n"
-						  "Content-Type: text/html; charset=utf-8\r\n"
-						  "Connection: close\r\n"
-						  "\r\n";
-
-static char header404[] = "HTTP/1.1 404 Not Found\r\n"
-						  "Content-Type: text/html; charset=utf-8\r\n"
-						  "Connection: close\r\n"
-						  "\r\n";
 
 void
 hdl_peer(int peerfd)
@@ -36,7 +28,8 @@ hdl_peer(int peerfd)
 	hdl_peerResponse(peerfd, request, filefd, code);
 
 	free(request);
-	close(filefd);
+	if (filefd >= 0)
+		close(filefd);
 }
 
 char *
@@ -87,11 +80,17 @@ hdl_peerCode(int filefd)
 	struct stat statbuf;
 
 	if (filefd == -1)
-		code = 404;
+	{
+		switch (errno)
+		{
+		case 2:  code = 404; break;
+		default: code = 500; break;
+		}
+	}
 	else
 	{
 		fstat(filefd, &statbuf);
-		switch(statbuf.st_mode & S_IFMT)
+		switch (statbuf.st_mode & S_IFMT)
 		{
 		case S_IFREG:/*file*/
 			if (statbuf.st_mode & S_IXOTH)/*cgi*/
@@ -106,8 +105,8 @@ hdl_peerCode(int filefd)
 			code = 404;
 			break;
 
-		default:/*501*/
-			code = 501;
+		default:/*500*/
+			code = 500;
 			break;
 		}
 	}
@@ -120,8 +119,12 @@ hdl_peerResponse(int peerfd, const char *request, int filefd, int code)
 {
 	int  fildes[2];
 	char c;
-	char *newargv[2] = { NULL };
+	char *header;
+	char *body;
+	char *newargv[2] = { "", NULL };
 	char *newenvp[1] = { NULL };
+
+	header = http_header(code);
 
 	switch(code)
 	{
@@ -136,15 +139,19 @@ hdl_peerResponse(int peerfd, const char *request, int filefd, int code)
 		break;
 
 	case 200:/*http*/
-		write(peerfd, header200, strlen(header200));
+		write(peerfd, header, strlen(header));
 		
 		while (read(filefd, &c, 1) > 0)
 			write(peerfd, &c, 1);
 		break;
 
 	default:/*error*/
-		write(peerfd, header404, strlen(header404));
-		write(peerfd, "404 Not Found", 13);
+		body = http_strOfCode(code);
+		
+		write(peerfd, header, strlen(header));
+		write(peerfd, body, strlen(body));
 		break;
 	}
+
+	free(header);
 }

@@ -55,7 +55,7 @@ char *
 tkz_requestGetHeaderTarget(const char *request)
 {
 	char   *str = NULL;
-	char   *ps, *pe;
+	char   *ps, *pe, *sep;
 	size_t len;
 
 	ps = strstr(request, " ") + 1;
@@ -63,6 +63,13 @@ tkz_requestGetHeaderTarget(const char *request)
 	len = (size_t) (pe - ps);
 	str = calloc(len + 1, 1);
 	memcpy(str, ps, len);
+	
+	sep = strstr(str, "?");
+	if (sep)
+	{
+		*sep = '\0';
+		str = realloc(str, strlen(str) + 1);
+	}
 
 	return str;
 }
