@@ -1,5 +1,7 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -pedantic -g
+CFLAGS = -Wall -Wextra -Werror -pedantic
+#CFLAGS += -g
+CFLAGS += -s -Os
 EXEC = uhttpd
 
 all: $(EXEC)

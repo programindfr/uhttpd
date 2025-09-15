@@ -15,14 +15,14 @@
 #include <unistd.h>
 
 void
-hdl_peer(int peerfd)
+hdl_peer(int peerfd, const char *optpath)
 {
 	int  filefd;
 	int  code;
 	char *request;
 
 	request = hdl_peerRequest(peerfd);
-	filefd = hdl_peerTarget(request);
+	filefd = hdl_peerTarget(request, optpath);
 	code = hdl_peerCode(filefd);
 
 	hdl_peerResponse(peerfd, request, filefd, code);
@@ -51,7 +51,7 @@ hdl_peerRequest(int peerfd)
 }
 
 int
-hdl_peerTarget(const char *request)
+hdl_peerTarget(const char *request, const char *optpath)
 {
 	int			 dirfd;
 	int			 filefd;
@@ -64,7 +64,7 @@ hdl_peerTarget(const char *request)
 
 	how.flags = O_RDONLY;
 	how.resolve = RESOLVE_IN_ROOT | RESOLVE_NO_MAGICLINKS;
-	dirfd = open(".", O_RDONLY);
+	dirfd = open(optpath, O_RDONLY);
 	filefd = syscall(SYS_openat2, dirfd, target, &how, sizeof(struct open_how));
 
 	free(target);
