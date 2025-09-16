@@ -14,12 +14,16 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+DA_INIT_NEW(char, char)
+DA_INIT_DELETE(char, char)
+DA_INIT_APPEND(char, char)
+
 void
 hdl_peer(int peerfd, const char *optpath)
 {
-	int  filefd;
-	int  code;
-	char *request;
+	int			 filefd;
+	int			 code;
+	da_array_char_t *request;
 
 	request = hdl_peerRequest(peerfd);
 	filefd = hdl_peerTarget(request, optpath);
@@ -27,38 +31,39 @@ hdl_peer(int peerfd, const char *optpath)
 
 	hdl_peerResponse(peerfd, request, filefd, code);
 
-	free(request);
+	da_delete_char(request);
 	if (filefd >= 0)
 		close(filefd);
 }
 
-char *
+da_array_char_t *
 hdl_peerRequest(int peerfd)
 {
-	char c;
+	char			c;
+	da_array_char_t *buffer;
 
-	DA_ARRAY(char, buffer);
+	buffer = da_new_char();
 
 	while (tcp_serverPollin0(peerfd) == POLLIN)
 	{
 		read(peerfd, &c, 1);
-		DA_APPEND(char, buffer, c);
+		da_append_char(buffer, c);
 	}
 
-	DA_APPEND(char, buffer, '\0');
+	da_append_char(buffer, '\0');
 
-	return buffer.array;
+	return buffer;
 }
 
 int
-hdl_peerTarget(const char *request, const char *optpath)
+hdl_peerTarget(const da_array_char_t *request, const char *optpath)
 {
 	int			 dirfd;
 	int			 filefd;
 	char			*target;
 	struct open_how how = { 0 };
 	
-	target = tkz_requestGetHeaderTarget(request);
+	target = tkz_requestGetHeaderTarget(request->array);
 	write(STDOUT_FILENO, target, strlen(target));
 	write(STDOUT_FILENO, "\n", 1);
 
@@ -115,7 +120,7 @@ hdl_peerCode(int filefd)
 }
 
 void
-hdl_peerResponse(int peerfd, const char *request, int filefd, int code)
+hdl_peerResponse(int peerfd, const da_array_char_t *request, int filefd, int code)
 {
 	int  fildes[2];
 	char c;
@@ -130,7 +135,7 @@ hdl_peerResponse(int peerfd, const char *request, int filefd, int code)
 	{
 	case 0:/*cgi*/
 		pipe(fildes);
-		write(fildes[1], request, strlen(request));
+		write(fildes[1], request->array, request->length);
 		close(fildes[1]);
 		dup2(fildes[0], STDIN_FILENO);
 		dup2(peerfd, STDOUT_FILENO);

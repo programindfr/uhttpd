@@ -1,35 +1,56 @@
-#ifndef __DARRAY_H__
-#define __DARRAY_H__
+#ifndef __DYNAMIC_ARRAY_H__
+#define __DYNAMIC_ARRAY_H__
 
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define DA_ARRAY(TYPE, NAME) \
-struct { \
+#define DA_INIT_TYPE(TYPE, NAME) \
+typedef struct { \
 	TYPE   *array; \
 	size_t length; \
-} NAME = { 0 }
+} da_array_ ## NAME ## _t;
 
-#define DA_FREE(NAME) \
-free(NAME.array); \
-NAME.array = NULL; \
-NAME.length = 0;
-
-#define DA_APPEND(TYPE, NAME, ELEM) \
-NAME.array = realloc(NAME.array, ++NAME.length * sizeof(TYPE)); \
-NAME.array[NAME.length - 1] = ELEM
-
-#define DA_REMOVE(TYPE, NAME, ELEM) \
-for (size_t i = 0; i < NAME.length; ++i) \
+#define DA_INIT_NEW(TYPE, NAME) \
+static da_array_ ## NAME ## _t *da_new_ ## NAME (void) \
 { \
-	if (NAME.array[i] == ELEM) \
+	return calloc(1, sizeof(da_array_ ## NAME ## _t)); \
+}
+
+#define DA_INIT_DELETE(TYPE, NAME) \
+static void da_delete_ ## NAME (da_array_ ## NAME ## _t *obj) \
+{ \
+	free(obj->array); \
+	free(obj); \
+}
+
+#define DA_INIT_APPEND(TYPE, NAME) \
+static void da_append_ ## NAME (da_array_ ## NAME ## _t *obj, TYPE elem) \
+{ \
+	obj->array = realloc(obj->array, ++obj->length * sizeof(TYPE)); \
+	obj->array[obj->length - 1] = elem; \
+}
+
+#define DA_INIT_REMOVE(TYPE, NAME) \
+static void da_remove_ ## NAME (da_array_ ## NAME ## _t *obj, TYPE elem) \
+{ \
+	for (size_t i = 0; i < obj->length; ++i) \
 	{ \
-		if (i < --NAME.length) \
-			memmove(&NAME.array[i], &NAME.array[i + 1], (NAME.length - i) * sizeof(TYPE)); \
-		NAME.array = realloc(NAME.array, NAME.length * sizeof(TYPE)); \
-		break; \
+		if (memcmp(&obj->array[i], &elem, sizeof(TYPE)) == 0) \
+		{ \
+			if (i < --obj->length) \
+				memmove(&obj->array[i], &obj->array[i + 1], (obj->length - i) * sizeof(TYPE)); \
+			obj->array = realloc(obj->array, obj->length * sizeof(TYPE)); \
+			break; \
+		} \
 	} \
 }
 
-#endif/*__DARRAY_H__*/
+#define DA_INIT_ALL(TYPE, NAME) \
+DA_INIT_TYPE(TYPE, NAME) \
+DA_INIT_NEW(TYPE, NAME) \
+DA_INIT_DELETE(TYPE, NAME) \
+DA_INIT_APPEND(TYPE, NAME) \
+DA_INIT_REMOVE(TYPE, NAME)
+
+#endif/*__DYNAMIC_ARRAY_H__*/

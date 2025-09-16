@@ -1,10 +1,12 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -pedantic
-#CFLAGS += -g
-CFLAGS += -s -Os
 EXEC = uhttpd
 
+all: CFLAGS += -s -Os
 all: $(EXEC)
+
+debug: CFLAGS += -g
+debug: $(EXEC)
 
 uhttpd: uhttpd.o tcp.o tokenizer.o handle.o http.o
 	$(CC) $(CFLAGS) $^ -o $@

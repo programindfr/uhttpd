@@ -6,9 +6,29 @@
 #include <unistd.h>
 
 void
-usage(char *name)
+version(void)
 {
-	fprintf(stderr, "Usage: %s [-f path] [-p port]\n", name);
+	puts("uhttpd 0.2");
+}
+
+void
+usage(FILE *stream)
+{
+	fprintf(
+		stream,
+		"Usage: uhttpd [OPTION]\n"
+		"A micro http server.\n"
+		"\n"
+		"  -v      : output version and exit\n"
+		"  -h      : show help\n"
+		"  -f PATH : set the path to serve\n"
+		"  -p PORT : set the port to listen to\n"
+		"\n"
+		"uhttpd  Copyright (C) 2025  Idyie\n"
+		"This program comes with ABSOLUTELY NO WARRANTY.\n"
+		"This is free software, and you are welcome to\n"
+		"redistribute it under certain conditions.\n"
+	);
 }
 
 int
@@ -22,10 +42,20 @@ main(int argc, char *argv[])
 	char  *optport = "8000";
 	pid_t pid;
 
-	while ((opt = getopt(argc, argv, "f:p:")) != -1)
+	while ((opt = getopt(argc, argv, "vhf:p:")) != -1)
 	{
 		switch (opt)
 		{
+		case 'v':
+			version();
+			exit(EXIT_SUCCESS);
+			break;
+
+		case 'h':
+			usage(stdout);
+			exit(EXIT_SUCCESS);
+			break;
+		
 		case 'f':
 			optpath = optarg;
 			break;
@@ -35,7 +65,7 @@ main(int argc, char *argv[])
 			break;
 
 		default:
-			usage(argv[0]);
+			usage(stderr);
 			exit(EXIT_FAILURE);
 		}
 	}
