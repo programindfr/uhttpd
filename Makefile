@@ -1,30 +1,35 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -pedantic
+CFLAGS = -Wall -Wextra -Werror -pedantic -Isrc/include
 EXEC = uhttpd
-
-all: CFLAGS += -s -Os
-all: $(EXEC)
 
 debug: CFLAGS += -g
 debug: $(EXEC)
 
-uhttpd: uhttpd.o tcp.o tokenizer.o handle.o http.o
+release: CFLAGS += -s -Os
+release: $(EXEC)
+
+package: clean release
+	chmod 755 $(EXEC)
+	mv $(EXEC) deb/$(EXEC)/usr/bin/
+	dpkg-deb --root-owner-group --build deb/$(EXEC)
+
+uhttpd: $(addprefix src/, uhttpd.o tcp.o tokenizer.o handle.o http.o)
 	$(CC) $(CFLAGS) $^ -o $@
 
-uhttpd.o: uhttpd.c tcp.h handle.h
+%/uhttpd.o: $(addprefix src/, uhttpd.c) $(addprefix src/include/, tcp.h handle.h)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-tcp.o: tcp.c tcp.h
+%/tcp.o: $(addprefix src/, tcp.c) $(addprefix src/include/, tcp.h)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-tokenizer.o: tokenizer.c tokenizer.h
+%/tokenizer.o: $(addprefix src/, tokenizer.c) $(addprefix src/include/, tokenizer.h)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-handle.o: handle.c handle.h tcp.h tokenizer.h darray.h http.h
+%/handle.o: $(addprefix src/, handle.c) $(addprefix src/include/, handle.h tcp.h tokenizer.h darray.h http.h)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-http.o: http.c http.h
+%/http.o: $(addprefix src/, http.c) $(addprefix src/include/, http.h)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o $(EXEC)
+	rm -f src/*.o $(EXEC) deb/$(EXEC)/usr/bin/$(EXEC) deb/$(EXEC).deb

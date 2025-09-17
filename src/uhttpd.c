@@ -1,5 +1,6 @@
 #include "handle.h"
 #include "tcp.h"
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,7 +9,7 @@
 void
 version(void)
 {
-	puts("uhttpd 0.2");
+	puts("uhttpd 0.3");
 }
 
 void
@@ -17,12 +18,13 @@ usage(FILE *stream)
 	fprintf(
 		stream,
 		"Usage: uhttpd [OPTION]\n"
-		"A micro http server.\n"
+		"A micro http web server.\n"
 		"\n"
 		"  -v      : output version and exit\n"
 		"  -h      : show help\n"
+		"  -d      : run as daemon\n"
 		"  -f PATH : set the path to serve\n"
-		"  -p PORT : set the port to listen to\n"
+		"  -p PORT : set the listening port\n"
 		"\n"
 		"uhttpd  Copyright (C) 2025  Idyie\n"
 		"This program comes with ABSOLUTELY NO WARRANTY.\n"
@@ -38,22 +40,27 @@ main(int argc, char *argv[])
 	int   loop = 1;
 	int   sockfd;
 	int   peerfd;
-	char  *optpath = ".";
+	int   daemonflag = 0;
+	char  *optpath = "./www";
 	char  *optport = "8000";
 	pid_t pid;
 
-	while ((opt = getopt(argc, argv, "vhf:p:")) != -1)
+	while ((opt = getopt(argc, argv, "vhdf:p:")) != -1)
 	{
 		switch (opt)
 		{
 		case 'v':
 			version();
-			exit(EXIT_SUCCESS);
+			goto exit_success;
 			break;
 
 		case 'h':
 			usage(stdout);
-			exit(EXIT_SUCCESS);
+			goto exit_success;
+			break;
+
+		case 'd':
+			daemonflag = 1;
 			break;
 		
 		case 'f':
@@ -66,22 +73,31 @@ main(int argc, char *argv[])
 
 		default:
 			usage(stderr);
-			exit(EXIT_FAILURE);
+			goto exit_failure;
 		}
 	}
 
+	if (daemonflag)
+	{
+		if (daemon(1, 1))
+		{
+			fprintf(stderr, "daemon: %d\n", errno);
+			exit(EXIT_FAILURE);
+		}
+	}
+		
 	signal(SIGCHLD, SIG_IGN);
 	
 	sockfd = tcp_serverListen(optport, 2);
 	if (sockfd == -1)
-		exit(EXIT_FAILURE);
+		goto exit_failure;
 
 	while (loop)
 	{
 		peerfd = tcp_serverAccept(sockfd);
 		if (peerfd == -1) {
 			close(sockfd);
-			exit(EXIT_FAILURE);
+			goto exit_failure;
 		}
 
 		pid = fork();
@@ -105,6 +121,14 @@ main(int argc, char *argv[])
 	}
 	
 	close(sockfd);
-	
+
+exit_success:;
+	if (daemonflag)
+		_exit(EXIT_SUCCESS);
 	exit(EXIT_SUCCESS);
+
+exit_failure:;
+	if (daemonflag)
+		_exit(EXIT_FAILURE);
+	exit(EXIT_FAILURE);
 }
