@@ -10,13 +10,14 @@ release: $(EXEC)
 
 package: clean release
 	chmod 755 $(EXEC)
+	mkdir -p -m 755 deb/$(EXEC)/usr/bin
 	mv $(EXEC) deb/$(EXEC)/usr/bin/
 	dpkg-deb --root-owner-group --build deb/$(EXEC)
 
 uhttpd: $(addprefix src/, uhttpd.o tcp.o tokenizer.o handle.o http.o)
 	$(CC) $(CFLAGS) $^ -o $@
 
-%/uhttpd.o: $(addprefix src/, uhttpd.c) $(addprefix src/include/, tcp.h handle.h)
+%/uhttpd.o: $(addprefix src/, uhttpd.c) $(addprefix src/include/, uhttpd.h tcp.h handle.h)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 %/tcp.o: $(addprefix src/, tcp.c) $(addprefix src/include/, tcp.h)

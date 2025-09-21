@@ -1,5 +1,6 @@
 #include "handle.h"
 #include "tcp.h"
+#include "uhttpd.h"
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -9,7 +10,7 @@
 void
 version(void)
 {
-	puts("uhttpd 0.3");
+	puts("uhttpd " VERSION);
 }
 
 void
@@ -40,27 +41,31 @@ main(int argc, char *argv[])
 	int   loop = 1;
 	int   sockfd;
 	int   peerfd;
-	int   daemonflag = 0;
-	char  *optpath = "./www";
-	char  *optport = "8000";
+	int   daemonflag;
+	char  *optpath;
+	char  *optport;
 	pid_t pid;
 
+	daemonflag = OPT_DAEMON;
+	optpath = OPT_PATH;
+	optport = OPT_PORT;
+	
 	while ((opt = getopt(argc, argv, "vhdf:p:")) != -1)
 	{
 		switch (opt)
 		{
 		case 'v':
 			version();
-			goto exit_success;
+			exit(EXIT_SUCCESS);
 			break;
 
 		case 'h':
 			usage(stdout);
-			goto exit_success;
+			exit(EXIT_SUCCESS);
 			break;
 
 		case 'd':
-			daemonflag = 1;
+			daemonflag = ~daemonflag;
 			break;
 		
 		case 'f':
@@ -73,7 +78,7 @@ main(int argc, char *argv[])
 
 		default:
 			usage(stderr);
-			goto exit_failure;
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -122,7 +127,7 @@ main(int argc, char *argv[])
 	
 	close(sockfd);
 
-exit_success:;
+/*exit_success:;*/
 	if (daemonflag)
 		_exit(EXIT_SUCCESS);
 	exit(EXIT_SUCCESS);

@@ -1,9 +1,10 @@
 Package: uhttpd
-Version: 0.3
-Maintainer: Idyie <idyie@proton.me>
+Version: 0.3.1
+Maintainer: Idyie
 Architecture: amd64
 Description: This is a micro http web server.
- By default, uhttpd listen to `8000` and serve `./www`, type `uhttpd -h` for more details.
+ By default, uhttpd listen to `8000` and serve `./www`.
+ Type `uhttpd -h` for more details.
 Section: httpd
 Priority: optional
 Depends: libc6
