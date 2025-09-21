@@ -26,6 +26,8 @@ usage(FILE *stream)
 		"  -d      : run as daemon\n"
 		"  -f PATH : set the path to serve\n"
 		"  -p PORT : set the listening port\n"
+		"  -o FILE : output stdout to FILE\n"
+		"  -e FILE : output stderr to FILE\n"
 		"\n"
 		"uhttpd  Copyright (C) 2025  Idyie\n"
 		"This program comes with ABSOLUTELY NO WARRANTY.\n"
@@ -50,7 +52,7 @@ main(int argc, char *argv[])
 	optpath = OPT_PATH;
 	optport = OPT_PORT;
 	
-	while ((opt = getopt(argc, argv, "vhdf:p:")) != -1)
+	while ((opt = getopt(argc, argv, "vhdf:p:o:e:")) != -1)
 	{
 		switch (opt)
 		{
@@ -74,6 +76,16 @@ main(int argc, char *argv[])
 		
 		case 'p':
 			optport = optarg;
+			break;
+
+		case 'o':
+			if (!freopen(optarg, "a", stdout))
+				exit(EXIT_FAILURE);
+			break;
+		
+		case 'e':
+			if (!freopen(optarg, "a", stderr))
+				exit(EXIT_FAILURE);
 			break;
 
 		default:

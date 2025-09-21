@@ -1,5 +1,5 @@
 Package: uhttpd
-Version: 0.3.1
+Version: 0.3.2
 Maintainer: Idyie
 Architecture: amd64
 Description: This is a micro http web server.

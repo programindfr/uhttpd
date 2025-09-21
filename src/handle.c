@@ -64,6 +64,8 @@ hdl_peerTarget(const da_array_char_t *request, const char *optpath)
 	struct open_how how = { 0 };
 	
 	target = tkz_requestGetHeaderTarget(request->array);
+	write(STDOUT_FILENO, target, strlen(target));
+	write(STDOUT_FILENO, "\n", 1);
 
 	how.flags = O_RDONLY;
 	how.resolve = RESOLVE_IN_ROOT | RESOLVE_NO_MAGICLINKS;
